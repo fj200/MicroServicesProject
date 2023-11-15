@@ -1,0 +1,71 @@
+[{
+    "_id": ObjectId("5d61728193528481fe5a3124"),
+    "songName": "I'm Like a Lawyer with the Way I'm Always Trying to Get You Off (Me & You)",
+    "songArtistFullName": "Fall Out Boy",
+    "songAlbum": "Infinity on High",
+    "songAmountFavourites": 54
+  },
+  {
+    "_id": ObjectId("5d61728193528481fe5a3125"),
+    "songName": "Sanctuary",
+    "songArtistFullName": "Joji",
+    "songAlbum": "Nectar",
+    "songAmountFavourites": 78
+  },
+  {
+    "_id": ObjectId("5d61728193528481fe5a3126"),
+    "songName": "Eki",
+    "songArtistFullName": "Mariya Takeuchi",
+    "songAlbum": "Expressions",
+    "songAmountFavourites": 45
+  },
+  {
+    "_id": ObjectId("5d61728193528481fe5a3127"),
+    "songName": "castle in the sky",
+    "songArtistFullName": "eaJ",
+    "songAlbum": "laughing in insomnia",
+    "songAmountFavourites": 39
+  },
+  {
+    "_id": ObjectId("5d61728193528481fe5a3122"),
+    "songName": "Sugar, We're Goin Down",
+    "songArtistFullName": "Fall Out Boy",
+    "songAlbum": "From Under the Cork Tree",
+    "songAmountFavourites": 49
+  },
+  {
+    "_id": ObjectId("5d61728193528481fe5a3123"),
+    "songName": "Melting",
+    "songArtistFullName": "Kali Uchis",
+    "songAlbum": "Por Vida",
+    "songAmountFavourites": 13
+  },
+  {
+    "_id": ObjectId("5d620f54d78b833e34e65b49"),
+    "songName": "like i need u",
+    "songArtistFullName": "keshi",
+    "songAlbum": "THE REAPER",
+    "songAmountFavourites": 44
+  },
+  {
+    "_id": ObjectId("5d620f54d78b833e34e65b48"),
+    "songName": "Mine (Taylor's Version)",
+    "songArtistFullName": "Taylor Swift",
+    "songAlbum": "Speak Now (Taylor's Version)",
+    "songAmountFavourites": 98
+  },
+  {
+    "_id": ObjectId("5d620f54d78b833e34e65b47"),
+    "songName": "Cupid - Twin Ver.",
+    "songArtistFullName": "FIFTY FIFTY",
+    "songAlbum": "The Beginning: Cupid",
+    "songAmountFavourites": 57
+  },
+  {
+    "_id": ObjectId("5d620f54d78b833e34e65b46"),
+    "songName": "After LIKE",
+    "songArtistFullName": "IVE",
+    "songAlbum": "After LIKE",
+    "songAmountFavourites": 44
+  }
+]
