@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -85,7 +85,7 @@ public class SongController {
 
 	
 	@RequestMapping(value = "/addSong", method = RequestMethod.POST)
-	public ResponseEntity<Map<String, Object>> addSong(@RequestParam Map<String, String> params,
+	public ResponseEntity<Map<String, Object>> addSong(@RequestBody Map<String, String> params,
 			HttpServletRequest request) {
 
 		Map<String, Object> response = new HashMap<String, Object>();
@@ -96,9 +96,8 @@ public class SongController {
 	}
 
 	
-	@RequestMapping(value = "/updateSongFavouritesCount/{songId}", method = RequestMethod.PUT)
-	public ResponseEntity<Map<String, Object>> updateFavouritesCount(@PathVariable("songId") String songId,
-			@RequestParam("shouldDecrement") String shouldDecrement, HttpServletRequest request) {
+	@RequestMapping(value = "/updateSongFavouritesCount", method = RequestMethod.PUT)
+	public ResponseEntity<Map<String, Object>> updateFavouritesCount(@RequestBody Map<String, String> params, HttpServletRequest request) {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("data", String.format("PUT %s", Utils.getUrl(request)));

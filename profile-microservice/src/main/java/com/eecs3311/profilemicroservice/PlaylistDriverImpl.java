@@ -42,10 +42,4 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 		
 		return null;
 	}
-
-	@Override
-	public DbQueryStatus deleteSongFromDb(String songId) {
-		
-		return null;
-	}
 }
