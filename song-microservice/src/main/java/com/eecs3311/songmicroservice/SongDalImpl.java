@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -20,17 +19,17 @@ public class SongDalImpl implements SongDal {
 
 	@Override
 	public DbQueryStatus addSong(Song songToAdd) {
-        Song insertedSong;
+        Song song;
         DbQueryStatus queryStatus;
         try {
             if(db.exists(Query.query(Criteria.where("songName").is(songToAdd.getSongName())), Song.class)){
                 queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
             }
             else {
-                insertedSong = db.insert(songToAdd);
-                if (insertedSong != null){
+                song = db.insert(songToAdd);
+                if (song != null){
                     queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
-                    queryStatus.setData(insertedSong);
+                    queryStatus.setData(song);
                 }
                 else{
                     queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
@@ -88,7 +87,24 @@ public class SongDalImpl implements SongDal {
 	@Override
 	public DbQueryStatus deleteSongById(String songId) {
 		// TODO Auto-generated method stub
-		return null;
+        Song song;
+        DbQueryStatus queryStatus;
+
+        try {
+            song = db.findById(new ObjectId(songId), Song.class);
+            if (song != null) {
+                db.remove(song, String.valueOf(Song.class));
+                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
+            } else {
+                // Song not found
+                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+            }
+        } catch (Exception e) {
+            // Handle exceptions, e.g., database errors
+            queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+        }
+
+        return queryStatus;
 	}
 
 	@Override
