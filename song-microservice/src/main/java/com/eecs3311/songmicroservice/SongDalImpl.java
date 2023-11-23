@@ -89,7 +89,6 @@ public class SongDalImpl implements SongDal {
 		// TODO Auto-generated method stub
         Song song;
         DbQueryStatus queryStatus;
-
         try{
             song = db.findById(new ObjectId(songId), Song.class);
             if (song != null) {
@@ -103,7 +102,6 @@ public class SongDalImpl implements SongDal {
         catch(Exception e){
             queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
         }
-
         return queryStatus;
 	}
 
