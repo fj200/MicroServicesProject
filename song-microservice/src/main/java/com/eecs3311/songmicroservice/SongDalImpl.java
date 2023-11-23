@@ -21,13 +21,13 @@ public class SongDalImpl implements SongDal {
 	public DbQueryStatus addSong(Song songToAdd) {
         Song song;
         DbQueryStatus queryStatus;
-        try {
+        try{
             if(db.exists(Query.query(Criteria.where("songName").is(songToAdd.getSongName())), Song.class)){
                 queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
             }
             else {
                 song = db.insert(songToAdd);
-                if (song != null){
+                if(song != null){
                     queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
                     queryStatus.setData(song);
                 }
@@ -90,17 +90,17 @@ public class SongDalImpl implements SongDal {
         Song song;
         DbQueryStatus queryStatus;
 
-        try {
+        try{
             song = db.findById(new ObjectId(songId), Song.class);
             if (song != null) {
                 db.remove(song, String.valueOf(Song.class));
                 queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
-            } else {
-                // Song not found
+            }
+            else {
                 queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
             }
-        } catch (Exception e) {
-            // Handle exceptions, e.g., database errors
+        }
+        catch(Exception e){
             queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
         }
 
