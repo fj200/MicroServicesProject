@@ -20,8 +20,27 @@ public class SongDalImpl implements SongDal {
 
 	@Override
 	public DbQueryStatus addSong(Song songToAdd) {
-		// TODO Auto-generated method stub
-		return null;
+        Song insertedSong;
+        DbQueryStatus queryStatus;
+        try {
+            if(db.exists(Query.query(Criteria.where("songName").is(songToAdd.getSongName())), Song.class)){
+                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+            }
+            else {
+                insertedSong = db.insert(songToAdd);
+                if (insertedSong != null){
+                    queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
+                    queryStatus.setData(insertedSong);
+                }
+                else{
+                    queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+                }
+            }
+        }
+        catch(Exception e){
+            queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+        }
+        return queryStatus;
 	}
 
 	@Override
