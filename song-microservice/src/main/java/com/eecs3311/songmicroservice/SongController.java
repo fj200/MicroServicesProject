@@ -31,7 +31,7 @@ public class SongController {
 
 	private OkHttpClient client = new OkHttpClient();
 
-	
+
 	public SongController(SongDal songDal) {
 		this.songDal = songDal;
 	}
@@ -44,8 +44,7 @@ public class SongController {
 	 * @return
 	 */
 	@RequestMapping(value = "/getSongById/{songId}", method = RequestMethod.GET)
-	public ResponseEntity<Map<String, Object>> getSongById(@PathVariable("songId") String songId,
-			HttpServletRequest request) {
+	public ResponseEntity<Map<String, Object>> getSongById(@PathVariable("songId") String songId, HttpServletRequest request) {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("GET %s", Utils.getUrl(request)));
@@ -57,10 +56,9 @@ public class SongController {
 		 return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 	}
 
-	
+
 	@RequestMapping(value = "/getSongTitleById/{songId}", method = RequestMethod.GET)
-	public ResponseEntity<Map<String, Object>> getSongTitleById(@PathVariable("songId") String songId,
-			HttpServletRequest request) {
+	public ResponseEntity<Map<String, Object>> getSongTitleById(@PathVariable("songId") String songId, HttpServletRequest request) {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("GET %s", Utils.getUrl(request)));
@@ -70,10 +68,9 @@ public class SongController {
         return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 	}
 
-	
+
 	@RequestMapping(value = "/deleteSongById/{songId}", method = RequestMethod.DELETE)
-	public ResponseEntity<Map<String, Object>> deleteSongById(@PathVariable("songId") String songId,
-			HttpServletRequest request) {
+	public ResponseEntity<Map<String, Object>> deleteSongById(@PathVariable("songId") String songId, HttpServletRequest request) {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("DELETE %s", Utils.getUrl(request)));
@@ -82,17 +79,37 @@ public class SongController {
 		return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
 	}
 
-	
 	@RequestMapping(value = "/addSong", method = RequestMethod.POST)
-	public ResponseEntity<Map<String, Object>> addSong(@RequestBody Map<String, String> params,
-			HttpServletRequest request) {
-
-		Map<String, Object> response = new HashMap<String, Object>();
+	public ResponseEntity<Map<String, Object>> addSong(@RequestBody Map<String, String> params, HttpServletRequest request) {
+		Map<String, Object> response = new HashMap<>();
 		response.put("path", String.format("POST %s", Utils.getUrl(request)));
-		// TODO: add any other values to the map following the example in getSongById
+
+		try {
+			String songName = params.get("songName");
+			String songArtistFullName = params.get("songArtistFullName");
+			String songAlbum = params.get("songAlbum");
+			if (songName == null || songArtistFullName == null || songAlbum == null) {
+				response.put("error", "Missing required parameters");
+				return Utils.setResponseStatus(response, null, null);
+			}
+
+			Song newSong = new Song(songName, songArtistFullName, songAlbum);
+			DbQueryStatus savedSong = songDal.addSong(newSong);
+			response.put("message", "Song added successfully");
+			response.put("song", savedSong.getdbQueryExecResult());
+			return Utils.setResponseStatus(response, savedSong.getdbQueryExecResult(), savedSong.getData());
+
+		} catch (Exception e) {
+			// Handle exceptions, log the error, and return an error response
+			response.put("error", "Internal Server Error");
+			return Utils.setResponseStatus(response, null, null);
+		}
 	}
 
-	
+
+
+
+
 	@RequestMapping(value = "/updateSongFavouritesCount", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, Object>> updateFavouritesCount(@RequestBody Map<String, String> params, HttpServletRequest request) {
 
