@@ -53,8 +53,9 @@ public class ProfileController {
 
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("POST %s", Utils.getUrl(request)));
-
-		return ResponseEntity.status(HttpStatus.OK).body(response); // TODO: replace with return statement similar to in getSongById
+        DbQueryStatus dbQueryStatus = profileDriver.createUserProfile(params.get("userName"), params.get("fullName"), params.get("password"));
+        response.put("message", dbQueryStatus.getMessage());
+		return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
 	}
 
 	@RequestMapping(value = "/followFriend", method = RequestMethod.PUT)
@@ -63,8 +64,9 @@ public class ProfileController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 		// TODO: add any other values to the map following the example in SongController.getSongById
-		
-		return ResponseEntity.status(HttpStatus.OK).body(response); // TODO: replace with return statement similar to in getSongById
+        DbQueryStatus dbQueryStatus = profileDriver.followFriend(params.get("userName"), params.get("friendUserName"));
+        response.put("message", dbQueryStatus.getMessage());
+        return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
 	}
 
 	@RequestMapping(value = "/getAllFriendFavouriteSongTitles/{userName}", method = RequestMethod.GET)
@@ -85,8 +87,9 @@ public class ProfileController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 		// TODO: add any other values to the map following the example in SongController.getSongById
-
-		return ResponseEntity.status(HttpStatus.OK).body(response); // TODO: replace with return statement similar to in getSongById
+        DbQueryStatus dbQueryStatus = profileDriver.unfollowFriend(params.get("userName"), params.get("friendUserName"));
+        response.put("message", dbQueryStatus.getMessage());
+        return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
 	}
 
 	@RequestMapping(value = "/likeSong", method = RequestMethod.PUT)
@@ -95,8 +98,9 @@ public class ProfileController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 		// TODO: add any other values to the map following the example in SongController.getSongById
-
-		return ResponseEntity.status(HttpStatus.OK).body(response); // TODO: replace with return statement similar to in getSongById
+        DbQueryStatus dbQueryStatus = playlistDriver.likeSong(params.get("userName"), params.get("songId"));
+        response.put("message", dbQueryStatus.getMessage());
+        return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
 	}
 
 	@RequestMapping(value = "/unlikeSong", method = RequestMethod.PUT)
@@ -105,7 +109,8 @@ public class ProfileController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 		// TODO: add any other values to the map following the example in SongController.getSongById
-
-		return ResponseEntity.status(HttpStatus.OK).body(response); // TODO: replace with return statement similar to in getSongById
+        DbQueryStatus dbQueryStatus = playlistDriver.unlikeSong(params.get("userName"), params.get("songId"));
+        response.put("message", dbQueryStatus.getMessage());
+        return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById // TODO: replace with return statement similar to in getSongById
 	}
 }
