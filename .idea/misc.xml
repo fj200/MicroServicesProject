@@ -4,6 +4,7 @@
     <option name="originalFiles">
       <list>
         <option value="$PROJECT_DIR$/song-microservice/pom.xml" />
+        <option value="$PROJECT_DIR$/profile-microservice/pom.xml" />
       </list>
     </option>
   </component>
