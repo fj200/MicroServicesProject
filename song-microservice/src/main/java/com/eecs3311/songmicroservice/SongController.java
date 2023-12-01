@@ -110,7 +110,7 @@ public class SongController {
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 		try {
 			String songId = params.get("songId");
-			String shouldDecrementStr = params.get("shouldDecrement");
+			String shouldDecrementStr = params.get("songAmountFavourites");
 			if (songId == null || shouldDecrementStr == null) {
 				response.put("error", "Missing required parameters");
 				return Utils.setResponseStatus(response, null, null);
