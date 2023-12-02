@@ -104,12 +104,11 @@ public class ProfileDriverImpl implements ProfileDriver {
         }
         return status;
 	}
-
-	@Override
-	public DbQueryStatus getAllSongFriendsLike(String userName) {
+    
+    public DbQueryStatus getAllSongFriendsLike(String userName) {
         DbQueryStatus status = new DbQueryStatus("Error fetching songs liked by friends", DbQueryExecResult.QUERY_ERROR_GENERIC);
         try (Session session = driver.session()) {
-            String query = "MATCH (user:profile {userName: $userName})-[:friend]->(friend)-[:liked]->(song:Song) RETURN song";
+            String query = "MATCH (user:profile {userName: $userName})-[:follows]->(follows)-[:liked]->(song:Song) RETURN song";
             StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("userName", userName)));
             // Process the result and set the status accordingly
             List<Record> records = result.list();
@@ -124,5 +123,5 @@ public class ProfileDriverImpl implements ProfileDriver {
             status.setMessage(e.getMessage());
         }
         return status;
-	}
+    }
 }
