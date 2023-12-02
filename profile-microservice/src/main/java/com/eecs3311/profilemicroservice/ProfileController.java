@@ -70,14 +70,16 @@ public class ProfileController {
 	}
 
 	@RequestMapping(value = "/getAllFriendFavouriteSongTitles/{userName}", method = RequestMethod.GET)
-	public ResponseEntity<Map<String, Object>> getAllFriendFavouriteSongTitles(@PathVariable("userName") String userName,
-			HttpServletRequest request) {
-
-		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-		// TODO: add any other values to the map following the example in SongController.getSongById
-
-		return ResponseEntity.status(HttpStatus.OK).body(response); // TODO: replace with return statement similar to in getSongById
+	public ResponseEntity<Map<String, Object>> getAllFriendFavouriteSongTitles(@PathVariable("userName") String userName, HttpServletRequest request) {
+		Map<String, Object> response = new HashMap<>();
+		response.put("path", String.format("GET %s", Utils.getUrl(request)));
+		try {
+			DbQueryStatus dbQueryStatus = profileDriver.getAllSongFriendsLike(userName);
+			response.put("message", dbQueryStatus.getMessage());
+			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+		} catch (Exception e) {
+			return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
 	}
 
 
