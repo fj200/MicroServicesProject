@@ -107,7 +107,23 @@ public class ProfileDriverImpl implements ProfileDriver {
 
 	@Override
 	public DbQueryStatus getAllSongFriendsLike(String userName) {
-			
-		return null;
+        DbQueryStatus status = new DbQueryStatus("Error fetching songs liked by friends", DbQueryExecResult.QUERY_ERROR_GENERIC);
+        try (Session session = driver.session()) {
+            String query = "MATCH (user:profile {userName: $userName})-[:friend]->(friend)-[:liked]->(song:Song) RETURN song";
+            StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("userName", userName)));
+            // Process the result and set the status accordingly
+            List<Record> records = result.list();
+            if (!records.isEmpty()) {
+                status.setMessage("Songs liked by friends of " + userName + " retrieved successfully");
+                status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
+                status.setData(records);
+            } else {
+                status.setMessage("No songs liked by friends of " + userName + " found");
+            }
+        } catch (ClientException e) {
+            status.setMessage(e.getMessage());
+        }
+
+        return status;
 	}
 }
