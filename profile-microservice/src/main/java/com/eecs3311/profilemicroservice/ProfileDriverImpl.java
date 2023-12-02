@@ -123,7 +123,6 @@ public class ProfileDriverImpl implements ProfileDriver {
         } catch (ClientException e) {
             status.setMessage(e.getMessage());
         }
-
         return status;
 	}
 }
