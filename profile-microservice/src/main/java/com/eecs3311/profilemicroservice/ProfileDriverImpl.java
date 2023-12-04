@@ -1,11 +1,7 @@
 package com.eecs3311.profilemicroservice;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import ch.qos.logback.core.net.server.Client;
 import org.neo4j.driver.v1.Driver;
 import org.neo4j.driver.v1.Record;
 import org.neo4j.driver.v1.Session;
@@ -105,20 +101,86 @@ public class ProfileDriverImpl implements ProfileDriver {
         return status;
 	}
 
-    public DbQueryStatus getAllSongFriendsLike(String userName) {
+	@Override
+	public DbQueryStatus getAllSongFriendsLike(String userName) {
+        // MATCH (user:profile {userName: $userName})-[:follows]-(friend)-[:created]-(playlist)-[:includes]->(songs) RETURN friend.userName, songs.songId
         DbQueryStatus status = new DbQueryStatus("Error fetching songs liked by friends", DbQueryExecResult.QUERY_ERROR_GENERIC);
         try (Session session = driver.session()) {
-            String query = "MATCH (user:profile {userName: $userName})-[:follows]->(follows:profile)-[:created]->(playlist:playlist)-[:includes]->(song:Song) RETURN song";
+            String query = "MATCH (user:profile {userName: $userName})-[:follows]-(friend)-[:created]-(playlist)-[:includes]->(songs) RETURN friend.userName, songs.songId";
             StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("userName", userName)));
-            List<Record> records = result.list();
-            if (!records.isEmpty()) {
+            // Process the result and set the status accordingly
+
+            HashMap<String, List<String>> friendsSong = new HashMap<>();
+            while (result.hasNext()) {
+                Record record = result.next();
+                String friendName = record.get(0).asString();
+                String songId = (record.get(1)).asString();
+                friendsSong.putIfAbsent(friendName, new ArrayList<>());
+                friendsSong.getOrDefault(friendName, new ArrayList<>()).add(songId);
+            }
+            System.out.println(friendsSong.values());
+            if (!friendsSong.isEmpty()) {
                 status.setMessage("Songs liked by friends of " + userName + " retrieved successfully");
                 status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
-                status.setData(records);
+                status.setData(friendsSong);
             } else {
                 status.setMessage("No songs liked by friends of " + userName + " found");
             }
         } catch (ClientException e) {
+            status.setMessage(e.getMessage());
+        }
+        return status;
+	}
+
+    @Override
+    public DbQueryStatus getSongsInPlayList(String userName) {
+        DbQueryStatus status = new DbQueryStatus("Error fetching songs liked by user", DbQueryExecResult.QUERY_ERROR_GENERIC);
+        try (Session session = driver.session()) {
+            String query = "MATCH (p:playlist {plName: $plName})-[:includes]->(s:song) return (s.songId)";
+            StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("plName", userName+"-favorites")));
+            // Process the result and set the status accordingly
+            List<String> songs = new ArrayList<>();
+
+            while (result.hasNext()) {
+                Record record = result.next();
+                String songId = (record.get(0)).asString();
+                songs.add(songId);
+            }
+            if (!songs.isEmpty()) {
+                status.setMessage("Songs liked by " + userName + " retrieved successfully");
+                status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
+                status.setData(songs);
+            } else {
+                status.setMessage("No songs liked by " + userName + " found");
+            }
+        } catch (ClientException e) {
+            System.out.println("error "+e.getMessage());
+            status.setMessage(e.getMessage());
+        }
+        return status;
+    }
+
+    @Override
+    public DbQueryStatus blend(String userName) {
+        DbQueryStatus status = new DbQueryStatus("Error making playlist",DbQueryExecResult.QUERY_ERROR_GENERIC);
+        try (Session session = driver.session()){
+            String query = "MATCH (a:playlist {plName: plName: $plName})-[:includes]->(song:song) RETURN song.songId AS result" +
+                    " UNION " +
+                    "MATCH (user:profile {userName: $userName})-[:follows]-(friend)-[:created]-(playlist)-[:includes]->(songs:song) RETURN songs.songId AS result";
+            StatementResult result = session.writeTransaction(tx -> tx.run(query,parameters("plName", userName+"-favorites","userName", userName)));
+            status.setMessage(userName+ "and blend playlist created");
+            status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
+            session.close();
+            List<String> songIds = new ArrayList<>();
+
+            while (result.hasNext()) {
+                Record record = result.next();
+                String songId = (record.get(0)).asString();
+                songIds.add(songId);
+            }
+            status.setData(songIds);
+        }
+        catch (Exception e){
             status.setMessage(e.getMessage());
         }
         return status;

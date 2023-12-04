@@ -9,16 +9,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import okhttp3.Call;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -83,7 +78,7 @@ public class SongController {
 		try {
 			response.put("path", String.format("DELETE %s", Utils.getUrl(request)));
 			// TODO: add any other values to the map following the example in getSongById
-			DbQueryStatus dbQueryStatus = songDal.findSongById(songId);
+			DbQueryStatus dbQueryStatus = songDal.deleteSongById(songId);
 			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
 		} catch (Exception e) {
 			response.put("error", "An error occurred while processing the request");
@@ -152,4 +147,29 @@ public class SongController {
 			return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
+
+
+    @RequestMapping(value = "/getMostFavoritesSong", method = RequestMethod.POST)
+    public ResponseEntity<Map<String, Object>> getMostFavoritesSong(@RequestBody List<String> params, HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("path", String.format("PUT %s", Utils.getUrl(request)));
+        try {
+            DbQueryStatus updateStatus = songDal.getMostFavoritesSong(params);
+            if (updateStatus.getdbQueryExecResult() == DbQueryExecResult.QUERY_OK) {
+                response.put("message", "Song favorites count updated successfully");
+                return Utils.setResponseStatus(response, updateStatus.getdbQueryExecResult(), updateStatus.getData());
+            }
+            else if (updateStatus.getdbQueryExecResult() == DbQueryExecResult.QUERY_ERROR_NOT_FOUND) {
+                response.put("error", "Song not found");
+            }
+            else {
+                response.put("error", "Failed to update song favorites count");
+            }
+            return Utils.setResponseStatus(response, updateStatus.getdbQueryExecResult(), null);
+        }
+        catch (Exception e) {
+            response.put("error", "Internal Server Error");
+            return Utils.setResponseStatus(response, null, null);
+        }
+    }
 }

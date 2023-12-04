@@ -2,10 +2,17 @@ package com.eecs3311.songmicroservice;
 
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.MatchOperation;
+import org.springframework.data.mongodb.core.aggregation.SortOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public class SongDalImpl implements SongDal {
@@ -134,4 +141,21 @@ public class SongDalImpl implements SongDal {
         }
         return queryStatus;
 	}
+
+    @Override
+    public DbQueryStatus getMostFavoritesSong(List<String> songIds) {
+        DbQueryStatus queryStatus = null;
+        MatchOperation matchOperation = Aggregation.match(Criteria.where("_id").in(songIds));
+        // Sort by songAmountFavourites in descending order
+        SortOperation sortByFavouritesDesc = Aggregation.sort(Sort.Direction.DESC,"songAmountFavourites");
+        // Limit to 1 result (the one with the maximum songAmountFavourites)
+        Aggregation aggregation = Aggregation.newAggregation(matchOperation,sortByFavouritesDesc, Aggregation.limit(1));
+        AggregationResults<Song> result = db.aggregate(aggregation, "songs", Song.class);
+        List<Song> songs = result.getMappedResults();
+        System.out.println(songs);
+        queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
+        queryStatus.setData(songs.get(0).getSongName());
+
+        return queryStatus;
+    }
 }
