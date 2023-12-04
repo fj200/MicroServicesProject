@@ -71,4 +71,20 @@ public class PlaylistDriverImpl implements PlaylistDriver {
         }
         return status;
 	}
+
+    @Override
+    public DbQueryStatus blend(String userName, String frndUserName) {
+        DbQueryStatus status = new DbQueryStatus("Error making playlist",DbQueryExecResult.QUERY_ERROR_GENERIC);
+        try (Session session = driver.session()){
+            String query ="MATCH  (a:playlist {plName: $plName})-[:includes]->(song:Song) RETURN song UNION MATCH (b:playlist {fplName: $fplName})-[:includes]->(song:Song) RETURN";
+            StatementResult result = session.writeTransaction(tx -> tx.run(query,parameters("plName", userName+"-favorites","fplName", frndUserName+"-favorites")));
+            status.setMessage(userName+ "and"+ frndUserName+"blend playlist created");
+            status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
+            session.close();
+        }
+        catch (Exception e){
+            status.setMessage(e.getMessage());
+        }
+        return status;
+    }
 }
