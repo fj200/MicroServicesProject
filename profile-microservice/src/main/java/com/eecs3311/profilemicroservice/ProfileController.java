@@ -50,24 +50,33 @@ public class ProfileController {
 
 	@RequestMapping(value = "/profile", method = RequestMethod.POST)
 	public ResponseEntity<Map<String, Object>> addProfile(@RequestBody Map<String, String> params, HttpServletRequest request) {
-
-		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("path", String.format("POST %s", Utils.getUrl(request)));
-        DbQueryStatus dbQueryStatus = profileDriver.createUserProfile(params.get("userName"), params.get("fullName"), params.get("password"));
-        response.put("message", dbQueryStatus.getMessage());
-		return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
+		Map<String, Object> response = new HashMap<>();
+		try {
+			response.put("path", String.format("POST %s", Utils.getUrl(request)));
+			DbQueryStatus dbQueryStatus = profileDriver.createUserProfile(params.get("userName"), params.get("fullName"), params.get("password"));
+			response.put("message", dbQueryStatus.getMessage());
+			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+		} catch (Exception e) {
+			response.put("error", "An error occurred while processing the request.");
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	@RequestMapping(value = "/followFriend", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, Object>> followFriend(@RequestBody Map<String, String> params, HttpServletRequest request) {
-
-		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-		// TODO: add any other values to the map following the example in SongController.getSongById
-        DbQueryStatus dbQueryStatus = profileDriver.followFriend(params.get("userName"), params.get("friendUserName"));
-        response.put("message", dbQueryStatus.getMessage());
-        return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
+		Map<String, Object> response = new HashMap<>();
+		try {
+			response.put("path", String.format("PUT %s", Utils.getUrl(request)));
+			DbQueryStatus dbQueryStatus = profileDriver.followFriend(params.get("userName"), params.get("friendUserName"));
+			response.put("message", dbQueryStatus.getMessage());
+			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+		} catch (Exception e) {
+			// Handle the exception here
+			response.put("error", "An error occurred while processing the request.");
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
+
 
 	@RequestMapping(value = "/getAllFriendFavouriteSongTitles/{userName}", method = RequestMethod.GET)
 	public ResponseEntity<Map<String, Object>> getAllFriendFavouriteSongTitles(@PathVariable("userName") String userName, HttpServletRequest request) {
@@ -82,37 +91,47 @@ public class ProfileController {
 		}
 	}
 
-
 	@RequestMapping(value = "/unfollowFriend", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, Object>> unfollowFriend(@RequestBody Map<String, String> params, HttpServletRequest request) {
-
-		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-		// TODO: add any other values to the map following the example in SongController.getSongById
-        DbQueryStatus dbQueryStatus = profileDriver.unfollowFriend(params.get("userName"), params.get("friendUserName"));
-        response.put("message", dbQueryStatus.getMessage());
-        return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
+		Map<String, Object> response = new HashMap<>();
+		try {
+			response.put("path", String.format("PUT %s", Utils.getUrl(request)));
+			DbQueryStatus dbQueryStatus = profileDriver.unfollowFriend(params.get("userName"), params.get("friendUserName"));
+			response.put("message", dbQueryStatus.getMessage());
+			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+		} catch (Exception e) {
+			response.put("error", "An error occurred while processing the request.");
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
 
 	@RequestMapping(value = "/likeSong", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, Object>> likeSong(@RequestBody Map<String, String> params, HttpServletRequest request) {
-
-		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-		// TODO: add any other values to the map following the example in SongController.getSongById
-        DbQueryStatus dbQueryStatus = playlistDriver.likeSong(params.get("userName"), params.get("songId"));
-        response.put("message", dbQueryStatus.getMessage());
-        return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
+		Map<String, Object> response = new HashMap<>();
+		try {
+			response.put("path", String.format("PUT %s", Utils.getUrl(request)));
+			DbQueryStatus dbQueryStatus = playlistDriver.likeSong(params.get("userName"), params.get("songId"));
+			response.put("message", dbQueryStatus.getMessage());
+			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+		} catch (Exception e) {
+			response.put("error", "An error occurred while processing the request.");
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
+
 
 	@RequestMapping(value = "/unlikeSong", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, Object>> unlikeSong(@RequestBody Map<String, String> params, HttpServletRequest request) {
-
-		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
-		// TODO: add any other values to the map following the example in SongController.getSongById
-        DbQueryStatus dbQueryStatus = playlistDriver.unlikeSong(params.get("userName"), params.get("songId"));
-        response.put("message", dbQueryStatus.getMessage());
-        return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById // TODO: replace with return statement similar to in getSongById
+		Map<String, Object> response = new HashMap<>();
+		try {
+			response.put("path", String.format("PUT %s", Utils.getUrl(request)));
+			DbQueryStatus dbQueryStatus = playlistDriver.unlikeSong(params.get("userName"), params.get("songId"));
+			response.put("message", dbQueryStatus.getMessage());
+			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+		} catch (Exception e) {
+			response.put("error", "An error occurred while processing the request.");
+			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
+
 }
