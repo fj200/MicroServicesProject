@@ -110,7 +110,6 @@ public class ProfileDriverImpl implements ProfileDriver {
         try (Session session = driver.session()) {
             String query = "MATCH (user:profile {userName: $userName})-[:follows]->(follows:profile)-[:created]->(playlist:playlist)-[:includes]->(song:Song) RETURN song";
             StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("userName", userName)));
-            // Process the result and set the status accordingly
             List<Record> records = result.list();
             if (!records.isEmpty()) {
                 status.setMessage("Songs liked by friends of " + userName + " retrieved successfully");

@@ -91,7 +91,6 @@ public class SongController {
 		}
 	}
 
-
 	@RequestMapping(value = "/addSong", method = RequestMethod.POST)
 	public ResponseEntity<Map<String, Object>> addSong(@RequestBody Map<String, String> params, HttpServletRequest request) {
 		Map<String, Object> response = new HashMap<>();
@@ -102,19 +101,24 @@ public class SongController {
 			String songAlbum = params.get("songAlbum");
 			if (songName == null || songArtistFullName == null || songAlbum == null) {
 				response.put("error", "Missing required parameters");
-				return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+				return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 			}
 			Song newSong = new Song(songName, songArtistFullName, songAlbum);
 			DbQueryStatus savedSong = songDal.addSong(newSong);
-			response.put("message", "Song added successfully");
-			response.put("song", savedSong.getdbQueryExecResult());
-			return Utils.setResponseStatus(response, savedSong.getdbQueryExecResult(), savedSong.getData());
-
+			if (savedSong.getdbQueryExecResult().equals(DbQueryExecResult.QUERY_OK)) {
+				response.put("message", "Song added successfully");
+				response.put("song", savedSong.getData());
+				return Utils.setResponseStatus(response, savedSong.getdbQueryExecResult(), savedSong.getData());
+			} else {
+				response.put("error", "Failed to add the song to the database");
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+			}
 		} catch (Exception e) {
 			response.put("error", "Internal Server Error");
-			return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
+
 
 
 	@RequestMapping(value = "/updateSongFavouritesCount", method = RequestMethod.PUT)
@@ -126,22 +130,22 @@ public class SongController {
 			String shouldDecrementStr = params.get("songAmountFavourites");
 			if (songId == null || shouldDecrementStr == null) {
 				response.put("error", "Missing required parameters");
-				return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+				return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 			}
 			boolean shouldDecrement = Boolean.parseBoolean(shouldDecrementStr);
 			DbQueryStatus updateStatus = songDal.updateSongFavouritesCount(songId, shouldDecrement);
-			if (updateStatus.getdbQueryExecResult() == DbQueryExecResult.QUERY_OK) {
+			if (updateStatus.getdbQueryExecResult().equals(DbQueryExecResult.QUERY_OK)) {
 				response.put("message", "Song favorites count updated successfully");
 				response.put("newFavouritesCount", updateStatus.getData());
 				return Utils.setResponseStatus(response, updateStatus.getdbQueryExecResult(), updateStatus.getData());
 			}
-			else if (updateStatus.getdbQueryExecResult() == DbQueryExecResult.QUERY_ERROR_NOT_FOUND) {
+			else if (updateStatus.getdbQueryExecResult().equals(DbQueryExecResult.QUERY_ERROR_NOT_FOUND)) {
 				response.put("error", "Song not found");
 			}
 			else {
 				response.put("error", "Failed to update song favorites count");
 			}
-			return Utils.setResponseStatus(response, updateStatus.getdbQueryExecResult(), null);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 		}
 		catch (Exception e) {
 			response.put("error", "Internal Server Error");
