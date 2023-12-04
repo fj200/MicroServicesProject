@@ -45,39 +45,52 @@ public class SongController {
 	 */
 	@RequestMapping(value = "/getSongById/{songId}", method = RequestMethod.GET)
 	public ResponseEntity<Map<String, Object>> getSongById(@PathVariable("songId") String songId, HttpServletRequest request) {
-
 		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("path", String.format("GET %s", Utils.getUrl(request)));
+		try {
+			response.put("path", String.format("GET %s", Utils.getUrl(request)));
 
-		DbQueryStatus dbQueryStatus = songDal.findSongById(songId);
+			DbQueryStatus dbQueryStatus = songDal.findSongById(songId);
 
-		// TODO: uncomment these two lines when you have completed the implementation of findSongById in SongDal
-		 response.put("message", dbQueryStatus.getMessage());
-		 return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+			// Uncomment these two lines when you have completed the implementation of findSongById in SongDal
+			response.put("message", dbQueryStatus.getMessage());
+			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+		} catch (Exception e) {
+			response.put("error", "An error occurred while processing the request");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
 	}
+
 
 
 	@RequestMapping(value = "/getSongTitleById/{songId}", method = RequestMethod.GET)
 	public ResponseEntity<Map<String, Object>> getSongTitleById(@PathVariable("songId") String songId, HttpServletRequest request) {
-
 		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("path", String.format("GET %s", Utils.getUrl(request)));
-		// TODO: add any other values to the map following the example in getSongById
-        DbQueryStatus dbQueryStatus = songDal.getSongTitleById(songId);
+		try {
+			response.put("path", String.format("GET %s", Utils.getUrl(request)));
+			// TODO: add any other values to the map following the example in getSongById
+			DbQueryStatus dbQueryStatus = songDal.getSongTitleById(songId);
 
-        return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+		} catch (Exception e) {
+			response.put("error", "An error occurred while processing the request");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
 	}
-
 
 	@RequestMapping(value = "/deleteSongById/{songId}", method = RequestMethod.DELETE)
 	public ResponseEntity<Map<String, Object>> deleteSongById(@PathVariable("songId") String songId, HttpServletRequest request) {
-
 		Map<String, Object> response = new HashMap<String, Object>();
-		response.put("path", String.format("DELETE %s", Utils.getUrl(request)));
-		// TODO: add any other values to the map following the example in getSongById
-		DbQueryStatus dbQueryStatus = songDal.findSongById(songId);
-		return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
+		try {
+			response.put("path", String.format("DELETE %s", Utils.getUrl(request)));
+			// TODO: add any other values to the map following the example in getSongById
+			DbQueryStatus dbQueryStatus = songDal.findSongById(songId);
+			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
+		} catch (Exception e) {
+			response.put("error", "An error occurred while processing the request");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+		}
 	}
+
 
 	@RequestMapping(value = "/addSong", method = RequestMethod.POST)
 	public ResponseEntity<Map<String, Object>> addSong(@RequestBody Map<String, String> params, HttpServletRequest request) {
@@ -89,7 +102,7 @@ public class SongController {
 			String songAlbum = params.get("songAlbum");
 			if (songName == null || songArtistFullName == null || songAlbum == null) {
 				response.put("error", "Missing required parameters");
-				return Utils.setResponseStatus(response, null, null);
+				return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 			}
 			Song newSong = new Song(songName, songArtistFullName, songAlbum);
 			DbQueryStatus savedSong = songDal.addSong(newSong);
@@ -99,7 +112,7 @@ public class SongController {
 
 		} catch (Exception e) {
 			response.put("error", "Internal Server Error");
-			return Utils.setResponseStatus(response, null, null);
+			return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
 
@@ -113,7 +126,7 @@ public class SongController {
 			String shouldDecrementStr = params.get("songAmountFavourites");
 			if (songId == null || shouldDecrementStr == null) {
 				response.put("error", "Missing required parameters");
-				return Utils.setResponseStatus(response, null, null);
+				return  ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 			}
 			boolean shouldDecrement = Boolean.parseBoolean(shouldDecrementStr);
 			DbQueryStatus updateStatus = songDal.updateSongFavouritesCount(songId, shouldDecrement);
@@ -132,7 +145,7 @@ public class SongController {
 		}
 		catch (Exception e) {
 			response.put("error", "Internal Server Error");
-			return Utils.setResponseStatus(response, null, null);
+			return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
 }
