@@ -8,6 +8,5 @@ public interface SongDal {
 	DbQueryStatus getSongTitleById(String songId);
 	DbQueryStatus deleteSongById(String songId);	
 	DbQueryStatus updateSongFavouritesCount(String songId, boolean shouldDecrement);
-
-    DbQueryStatus getMostFavoritesSong(List<String> params);
+    DbQueryStatus getMostFavoriteSong(List<String> params);
 }

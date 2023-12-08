@@ -1,10 +1,7 @@
 package com.eecs3311.profilemicroservice;
 
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
+import org.neo4j.driver.v1.*;
 import org.springframework.stereotype.Repository;
-import org.neo4j.driver.v1.Transaction;
 
 import static org.neo4j.driver.v1.Values.parameters;
 
@@ -37,18 +34,22 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 	public DbQueryStatus likeSong(String userName, String songId) {
         DbQueryStatus status = new DbQueryStatus("Error liking song",DbQueryExecResult.QUERY_ERROR_GENERIC);
         try (Session session = driver.session()) {
-            String query = "match (a:playlist {plName: $plName}) merge (b:song {songId: $songId}) merge (a)-[r:includes]->(b)  RETURN r";
+            String query = "MATCH (a:playlist {plName: $plName}) MERGE (b:song {songId: $songId})\n" +
+                            "WITH a, b OPTIONAL MATCH (a)-[r:includes]->(b:song) \n" +
+                            "WITH a, b, r MERGE (a)-[:includes]->(b)\n" +
+                            "RETURN CASE WHEN r IS NOT NULL THEN \"Relationship already exists\" ELSE \"Relationship created\" END AS result;";
             StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("plName", userName+"-favorites","songId", songId)));
             if (result.hasNext()) {
-                status.setMessage(userName + " likes " + songId);
+                Record record = result.next();
+                String message = (record.get(0)).asString();
+                status.setMessage(message);
                 status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
             }
             else{
-                status.setMessage(userName + " Cant like song user don't exists");
+                status.setMessage(userName + " Cant like song User does not exists");
                 status.setdbQueryExecResult(DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
             }
             status.setData(result);
-            session.close();
         }
         catch(Exception e){
             status.setMessage(e.getMessage());
@@ -60,11 +61,17 @@ public class PlaylistDriverImpl implements PlaylistDriver {
 	public DbQueryStatus unlikeSong(String userName, String songId) {
         DbQueryStatus status = new DbQueryStatus("Error unliking song",DbQueryExecResult.QUERY_ERROR_GENERIC);
         try (Session session = driver.session()) {
-            String query = "MATCH (a :playlist{plName: $plName})-[r:includes]->(b:song {songId: $songId}) DELETE r;";
+            String query = "MATCH (a :playlist{plName: $plName})-[r:includes]->(b:song {songId: $songId}) with r DELETE r return r";
             StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("plName", userName+"-favorites","songId", songId)));
-            status.setMessage(userName + " unliked " + songId);
-            status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
-            session.close();
+
+            if (result.hasNext()) {
+                status.setMessage("Song unliked");
+                status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
+            }
+            else{
+                status.setMessage("Relationship doesn't exists");
+                status.setdbQueryExecResult(DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+            }
         }
         catch(Exception e){
             status.setMessage(e.getMessage());
@@ -72,4 +79,18 @@ public class PlaylistDriverImpl implements PlaylistDriver {
         return status;
 	}
 
+    @Override
+    public DbQueryStatus deleteSong(String songId) {
+        DbQueryStatus status = new DbQueryStatus("Error removing song",DbQueryExecResult.QUERY_ERROR_GENERIC);
+        try (Session session = driver.session()) {
+            String query = "MATCH (a :playlist)-[r:includes]->(b:song {songId: $songId}) DELETE r, b;";
+            StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("songId", songId)));
+            status.setMessage("deleted " + songId);
+            status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
+        }
+        catch(Exception e){
+            status.setMessage(e.getMessage());
+        }
+        return status;
+    }
 }

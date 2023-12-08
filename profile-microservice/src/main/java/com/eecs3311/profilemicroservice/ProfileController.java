@@ -10,13 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import com.eecs3311.profilemicroservice.Utils;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.IOException;
 import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -81,7 +75,8 @@ public class ProfileController {
 			DbQueryStatus dbQueryStatus = profileDriver.getAllSongFriendsLike(userName);
             HashMap<String, List<String>> res = new HashMap<>();
             HashMap<String, List<String>> songs = (HashMap<String, List<String>>) dbQueryStatus.getData();
-
+            System.out.println(songs.keySet());
+            System.out.println(songs);
             for(String friendUserName : songs.keySet()){
                 int i = 0;
                 for(String songId: songs.get(friendUserName)){
@@ -93,11 +88,14 @@ public class ProfileController {
                     // Parse the JSON response
                     JSONObject jsonResponse = new JSONObject(resp);
                     songs.get(friendUserName).set(i, jsonResponse.getString("data"));
+                    i += 1;
                 }
             }
 			response.put("message", res);
+            System.out.println("");
 			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 		} catch (Exception e) {
+            System.out.println(e.getMessage());
 			return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
@@ -116,12 +114,57 @@ public class ProfileController {
 		}
 	}
 
+    @RequestMapping(value = "/getBlended/{userName}", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Object>> getBlended(@PathVariable("userName") String userName, HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("path", String.format("GET %s", Utils.getUrl(request)));
+        try {
+            DbQueryStatus dbQueryStatus = profileDriver.blend(userName);
+            List<String> songs = (List<String>) dbQueryStatus.getData();
+            System.out.println(songs);
+            int i = 0;
+            for(String songId: songs){
+                Request req = new Request.Builder()
+                        .url("http://localhost:3001/getSongTitleById/"+songId)
+                        .build();
+                Call call = client.newCall(req);
+                String resp = call.execute().body().string();
+                // Parse the JSON response
+                JSONObject jsonResponse = new JSONObject(resp);
+                songs.set(i, jsonResponse.getString("data"));
+                i += 1;
+            }
+            return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+        } catch (Exception e) {
+            response.put("error",e.getMessage());
+            return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 	@RequestMapping(value = "/likeSong", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, Object>> likeSong(@RequestBody Map<String, String> params, HttpServletRequest request) {
 		Map<String, Object> response = new HashMap<>();
 		try {
 			response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 			DbQueryStatus dbQueryStatus = playlistDriver.likeSong(params.get("userName"), params.get("songId"));
+            System.out.println(dbQueryStatus.getMessage());
+            if("Relationship created".equals(dbQueryStatus.getMessage())){
+                String json = "{\"songId\": \"" + params.get("songId") + "\", \"shouldDecrement\": false}";
+
+                System.out.println("this worked "+json);
+
+                okhttp3.RequestBody body = okhttp3.RequestBody.create(MediaType.parse("application/json"), json );
+                Request req = new Request.Builder()
+                        .url("http://localhost:3001/updateSongFavouritesCount/")
+                        .put(body)
+                        .build();
+                Call call = client.newCall(req);
+                String resp = call.execute().body().string();
+                // Parse the JSON response
+//                JSONObject jsonResponse = new JSONObject(resp);
+//                res.set(i, jsonResponse.getString("data"));
+                System.out.println(resp);
+            }
 			response.put("message", dbQueryStatus.getMessage());
 			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 		} catch (Exception e) {
@@ -137,6 +180,7 @@ public class ProfileController {
         try {
             List<String> songs = (List<String>) profileDriver.getSongsInPlayList(userName).getData();
             if(songs.isEmpty()){
+                response.put("message","No songs found for this user");
                 return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
             }
             else {
@@ -155,7 +199,7 @@ public class ProfileController {
             }
 
         } catch (Exception e) {
-            response.put("error", "An error occurred while processing the request.");
+            response.put("error", e.getMessage());
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
@@ -166,6 +210,23 @@ public class ProfileController {
 		try {
 			response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 			DbQueryStatus dbQueryStatus = playlistDriver.unlikeSong(params.get("userName"), params.get("songId"));
+            if("Song unliked".equals(dbQueryStatus.getMessage())){
+                String json = "{\"songId\": \"" + params.get("songId") + "\", \"shouldDecrement\": true}";
+
+                System.out.println("this worked "+json);
+
+                okhttp3.RequestBody body = okhttp3.RequestBody.create(MediaType.parse("application/json"), json );
+                Request req = new Request.Builder()
+                        .url("http://localhost:3001/updateSongFavouritesCount/")
+                        .put(body)
+                        .build();
+                Call call = client.newCall(req);
+                String resp = call.execute().body().string();
+                // Parse the JSON response
+//                JSONObject jsonResponse = new JSONObject(resp);
+//                res.set(i, jsonResponse.getString("data"));
+                System.out.println(resp);
+            }
 			response.put("message", dbQueryStatus.getMessage());
 			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 		} catch (Exception e) {
@@ -173,5 +234,20 @@ public class ProfileController {
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
+
+    @RequestMapping(value = "/deleteSong/{songId}", method = RequestMethod.DELETE)
+    public ResponseEntity<Map<String, Object>> deleteSong(@PathVariable("songId") String songId, HttpServletRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            response.put("path", String.format("PUT %s", Utils.getUrl(request)));
+            DbQueryStatus dbQueryStatus = playlistDriver.deleteSong(songId);
+            response.put("message", dbQueryStatus.getMessage());
+            return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+        } catch (Exception e) {
+            response.put("error", e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 
 }

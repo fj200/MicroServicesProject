@@ -106,7 +106,9 @@ public class ProfileDriverImpl implements ProfileDriver {
         // MATCH (user:profile {userName: $userName})-[:follows]-(friend)-[:created]-(playlist)-[:includes]->(songs) RETURN friend.userName, songs.songId
         DbQueryStatus status = new DbQueryStatus("Error fetching songs liked by friends", DbQueryExecResult.QUERY_ERROR_GENERIC);
         try (Session session = driver.session()) {
-            String query = "MATCH (user:profile {userName: $userName})-[:follows]-(friend)-[:created]-(playlist)-[:includes]->(songs) RETURN friend.userName, songs.songId";
+            String query =  "MATCH (user:profile {userName: $userName})-[:follows]->(friend)\n" +
+                            "OPTIONAL MATCH (friend)-[:created]->(playlist)-[:includes]->(songs) \n" +
+                            "RETURN friend.userName, COALESCE(songs.songId, \"NSF\") AS songId;";
             StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("userName", userName)));
             // Process the result and set the status accordingly
 
@@ -116,16 +118,19 @@ public class ProfileDriverImpl implements ProfileDriver {
                 String friendName = record.get(0).asString();
                 String songId = (record.get(1)).asString();
                 friendsSong.putIfAbsent(friendName, new ArrayList<>());
-                friendsSong.getOrDefault(friendName, new ArrayList<>()).add(songId);
+                //NSF no song found
+                if(!songId.equals("NSF"))friendsSong.get(friendName).add(songId);
+//                System.out.println(friendName +" "+ songId);
             }
-            System.out.println(friendsSong.values());
+//            System.out.println(friendsSong);
+            status.setData(friendsSong);
+            status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
             if (!friendsSong.isEmpty()) {
                 status.setMessage("Songs liked by friends of " + userName + " retrieved successfully");
-                status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
-                status.setData(friendsSong);
             } else {
                 status.setMessage("No songs liked by friends of " + userName + " found");
             }
+
         } catch (ClientException e) {
             status.setMessage(e.getMessage());
         }
@@ -146,10 +151,10 @@ public class ProfileDriverImpl implements ProfileDriver {
                 String songId = (record.get(0)).asString();
                 songs.add(songId);
             }
+            status.setData(songs);
             if (!songs.isEmpty()) {
                 status.setMessage("Songs liked by " + userName + " retrieved successfully");
                 status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
-                status.setData(songs);
             } else {
                 status.setMessage("No songs liked by " + userName + " found");
             }
@@ -164,11 +169,11 @@ public class ProfileDriverImpl implements ProfileDriver {
     public DbQueryStatus blend(String userName) {
         DbQueryStatus status = new DbQueryStatus("Error making playlist",DbQueryExecResult.QUERY_ERROR_GENERIC);
         try (Session session = driver.session()){
-            String query = "MATCH (a:playlist {plName: plName: $plName})-[:includes]->(song:song) RETURN song.songId AS result" +
+            String query = "MATCH (a:playlist {plName: $plName})-[:includes]->(song:song) RETURN song.songId AS result" +
                     " UNION " +
-                    "MATCH (user:profile {userName: $userName})-[:follows]-(friend)-[:created]-(playlist)-[:includes]->(songs:song) RETURN songs.songId AS result";
+                    "MATCH (user:profile {userName: $userName})-[:follows]->(friend)-[:created]->(playlist)-[:includes]->(songs:song) RETURN songs.songId AS result";
             StatementResult result = session.writeTransaction(tx -> tx.run(query,parameters("plName", userName+"-favorites","userName", userName)));
-            status.setMessage(userName+ "and blend playlist created");
+            status.setMessage(userName+ " and blend playlist created");
             status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
             session.close();
             List<String> songIds = new ArrayList<>();

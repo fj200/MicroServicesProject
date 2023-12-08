@@ -29,22 +29,17 @@ public class SongDalImpl implements SongDal {
         Song song;
         DbQueryStatus queryStatus;
         try{
-            if(db.exists(Query.query(Criteria.where("songName").is(songToAdd.getSongName())), Song.class)){
-                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+            if(db.exists(new Query(Criteria.where("songName").is(songToAdd.getSongName())), Song.class)){
+                queryStatus = new DbQueryStatus("Song already exists", DbQueryExecResult.QUERY_ERROR_GENERIC);
             }
             else {
                 song = db.insert(songToAdd);
-                if(song != null){
-                    queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
-                    queryStatus.setData(song);
-                }
-                else{
-                    queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
-                }
+                queryStatus = new DbQueryStatus("Song inserted", DbQueryExecResult.QUERY_OK);
+                queryStatus.setData(song);
             }
         }
         catch(Exception e){
-            queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+            queryStatus = new DbQueryStatus(e.getMessage(), DbQueryExecResult.QUERY_ERROR_GENERIC);
         }
         return queryStatus;
 	}
@@ -54,18 +49,17 @@ public class SongDalImpl implements SongDal {
 		// TODO Auto-generated method stub
         Song song;
         DbQueryStatus queryStatus = null;
-
         try{
             song = db.findById(new ObjectId(songId), Song.class);
             if (song != null){
-                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
+                queryStatus = new DbQueryStatus("Song found in Database", DbQueryExecResult.QUERY_OK);
                 queryStatus.setData(song);
             } else if (song == null) {
-                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+                queryStatus = new DbQueryStatus("Song not found in Database", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
             }
         }
         catch (Exception e){
-            queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+            queryStatus = new DbQueryStatus(e.getMessage(), DbQueryExecResult.QUERY_ERROR_GENERIC);
         }
         return queryStatus;
     }
@@ -75,18 +69,17 @@ public class SongDalImpl implements SongDal {
 		// TODO Auto-generated method stub
         Song song;
         DbQueryStatus queryStatus = null;
-
         try{
             song = db.findById(new ObjectId(songId), Song.class);
             if (song != null){
-                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
+                queryStatus = new DbQueryStatus("Song found in database", DbQueryExecResult.QUERY_OK);
                 queryStatus.setData(song.getSongName());
             } else if (song == null) {
-                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+                queryStatus = new DbQueryStatus("Song not found in database", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
             }
         }
         catch (Exception e){
-            queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+            queryStatus = new DbQueryStatus(e.getMessage(), DbQueryExecResult.QUERY_ERROR_GENERIC);
         }
         return queryStatus;
 	}
@@ -97,17 +90,16 @@ public class SongDalImpl implements SongDal {
         Song song;
         DbQueryStatus queryStatus;
         try{
-            song = db.findById(new ObjectId(songId), Song.class);
+            song = db.findAndRemove(new Query(Criteria.where("_id").is(songId)), Song.class);
             if (song != null) {
-                db.remove(song, String.valueOf(Song.class));
-                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
+                queryStatus = new DbQueryStatus("Song deleted from database", DbQueryExecResult.QUERY_OK);
             }
             else {
-                queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+                queryStatus = new DbQueryStatus("Song not found in Database", DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
             }
         }
         catch(Exception e){
-            queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+            queryStatus = new DbQueryStatus(e.getMessage(), DbQueryExecResult.QUERY_ERROR_GENERIC);
         }
         return queryStatus;
 	}
@@ -116,35 +108,35 @@ public class SongDalImpl implements SongDal {
 	public DbQueryStatus updateSongFavouritesCount(String songId, boolean shouldDecrement) {
 		// TODO Auto-generated method stub
         Song song;
-        DbQueryStatus queryStatus = null;
+        DbQueryStatus queryStatus = new DbQueryStatus("Song count less than zero",DbQueryExecResult.QUERY_OK);;
         try{
-            song= db.findById(new ObjectId(songId),Song.class);
+            song = db.findById(new ObjectId(songId),Song.class);
             if (song != null){
-                if (shouldDecrement && song.getSongAmountFavourites()>0){
-
-                    song.setSongAmountFavourites(song.getSongAmountFavourites()-1);
-                    queryStatus.setData(song.getSongAmountFavourites());
-                    queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
+                long songAmountFavourites = song.getSongAmountFavourites();
+                if (shouldDecrement && songAmountFavourites > 0){
+                    song.setSongAmountFavourites(songAmountFavourites - 1);
+                    queryStatus = new DbQueryStatus("Song count updated", DbQueryExecResult.QUERY_OK);
                 }
                 else if(!shouldDecrement) {
-                    song.setSongAmountFavourites(song.getSongAmountFavourites()+1);
-                    queryStatus.setData(song.getSongAmountFavourites());
-                    queryStatus= new DbQueryStatus("",DbQueryExecResult.QUERY_OK);
+                    song.setSongAmountFavourites(songAmountFavourites + 1);
+                    queryStatus= new DbQueryStatus("Song count updated",DbQueryExecResult.QUERY_OK);
                 }
+                queryStatus.setData(song);
+                db.save(song);
             }
             else {
-                queryStatus = new DbQueryStatus("",DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
+                queryStatus = new DbQueryStatus("Song not found",DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
             }
         }
         catch(Exception e){
-            queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_ERROR_GENERIC);
+            queryStatus = new DbQueryStatus(e.getMessage(), DbQueryExecResult.QUERY_ERROR_GENERIC);
         }
         return queryStatus;
 	}
 
     @Override
-    public DbQueryStatus getMostFavoritesSong(List<String> songIds) {
-        DbQueryStatus queryStatus = null;
+    public DbQueryStatus getMostFavoriteSong(List<String> songIds) {
+        DbQueryStatus queryStatus;
         MatchOperation matchOperation = Aggregation.match(Criteria.where("_id").in(songIds));
         // Sort by songAmountFavourites in descending order
         SortOperation sortByFavouritesDesc = Aggregation.sort(Sort.Direction.DESC,"songAmountFavourites");

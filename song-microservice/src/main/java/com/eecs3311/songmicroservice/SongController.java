@@ -1,5 +1,8 @@
 package com.eecs3311.songmicroservice;
 
+import okhttp3.Call;
+import okhttp3.Request;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,10 +46,7 @@ public class SongController {
 		Map<String, Object> response = new HashMap<String, Object>();
 		try {
 			response.put("path", String.format("GET %s", Utils.getUrl(request)));
-
 			DbQueryStatus dbQueryStatus = songDal.findSongById(songId);
-
-			// Uncomment these two lines when you have completed the implementation of findSongById in SongDal
 			response.put("message", dbQueryStatus.getMessage());
 			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 		} catch (Exception e) {
@@ -79,9 +79,25 @@ public class SongController {
 			response.put("path", String.format("DELETE %s", Utils.getUrl(request)));
 			// TODO: add any other values to the map following the example in getSongById
 			DbQueryStatus dbQueryStatus = songDal.deleteSongById(songId);
-			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData()); // TODO: replace with return statement similar to in getSongById
+
+            if(DbQueryExecResult.QUERY_OK.equals(dbQueryStatus.getdbQueryExecResult()) ){
+                Request req = new Request.Builder()
+                        .url("http://localhost:3002/deleteSong/"+songId)
+                        .delete()
+                        .build();
+
+                Call call = client.newCall(req);
+                String res = call.execute().body().string();
+                JSONObject jsonResponse = new JSONObject(res);
+                System.out.println(res);
+                response.put("data", jsonResponse);
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            }
+            else {
+                return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
+            }
 		} catch (Exception e) {
-			response.put("error", "An error occurred while processing the request");
+			response.put("error", e.getMessage());
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
@@ -102,7 +118,6 @@ public class SongController {
 			DbQueryStatus savedSong = songDal.addSong(newSong);
 			if (savedSong.getdbQueryExecResult().equals(DbQueryExecResult.QUERY_OK)) {
 				response.put("message", "Song added successfully");
-				response.put("song", savedSong.getData());
 				return Utils.setResponseStatus(response, savedSong.getdbQueryExecResult(), savedSong.getData());
 			} else {
 				response.put("error", "Failed to add the song to the database");
@@ -122,25 +137,33 @@ public class SongController {
 		response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 		try {
 			String songId = params.get("songId");
-			String shouldDecrementStr = params.get("songAmountFavourites");
+			String shouldDecrementStr = params.get("shouldDecrement");
 			if (songId == null || shouldDecrementStr == null) {
 				response.put("error", "Missing required parameters");
 				return  ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
 			}
 			boolean shouldDecrement = Boolean.parseBoolean(shouldDecrementStr);
 			DbQueryStatus updateStatus = songDal.updateSongFavouritesCount(songId, shouldDecrement);
+            System.out.println("error is not from the database command");
+            System.out.println(updateStatus.getData()+" "+ updateStatus.getdbQueryExecResult());
 			if (updateStatus.getdbQueryExecResult().equals(DbQueryExecResult.QUERY_OK)) {
 				response.put("message", "Song favorites count updated successfully");
-				response.put("newFavouritesCount", updateStatus.getData());
+                System.out.println("eroror is query ok");
 				return Utils.setResponseStatus(response, updateStatus.getdbQueryExecResult(), updateStatus.getData());
 			}
 			else if (updateStatus.getdbQueryExecResult().equals(DbQueryExecResult.QUERY_ERROR_NOT_FOUND)) {
 				response.put("error", "Song not found");
-			}
+                System.out.println("eroror is query not found");
+
+            }
 			else {
 				response.put("error", "Failed to update song favorites count");
-			}
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+                System.out.println("eroror is query kill me");
+
+            }
+            System.out.println("eroror is query second not found i dont understnat");
+
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
 		}
 		catch (Exception e) {
 			response.put("error", "Internal Server Error");
@@ -154,7 +177,7 @@ public class SongController {
         Map<String, Object> response = new HashMap<>();
         response.put("path", String.format("PUT %s", Utils.getUrl(request)));
         try {
-            DbQueryStatus updateStatus = songDal.getMostFavoritesSong(params);
+            DbQueryStatus updateStatus = songDal.getMostFavoriteSong(params);
             if (updateStatus.getdbQueryExecResult() == DbQueryExecResult.QUERY_OK) {
                 response.put("message", "Song favorites count updated successfully");
                 return Utils.setResponseStatus(response, updateStatus.getdbQueryExecResult(), updateStatus.getData());
