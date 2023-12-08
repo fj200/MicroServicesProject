@@ -49,7 +49,6 @@ public class PlaylistDriverImpl implements PlaylistDriver {
                 status.setMessage(userName + " Cant like song User does not exists");
                 status.setdbQueryExecResult(DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
             }
-            status.setData(result);
         }
         catch(Exception e){
             status.setMessage(e.getMessage());
@@ -84,7 +83,7 @@ public class PlaylistDriverImpl implements PlaylistDriver {
         DbQueryStatus status = new DbQueryStatus("Error removing song",DbQueryExecResult.QUERY_ERROR_GENERIC);
         try (Session session = driver.session()) {
             String query = "MATCH (a :playlist)-[r:includes]->(b:song {songId: $songId}) DELETE r, b;";
-            StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("songId", songId)));
+            session.writeTransaction(tx -> tx.run(query, parameters("songId", songId)));
             status.setMessage("deleted " + songId);
             status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
         }

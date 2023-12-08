@@ -61,7 +61,7 @@ public class ProfileController {
 			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 		} catch (Exception e) {
 			// Handle the exception here
-			response.put("error", "An error occurred while processing the request.");
+			response.put("error", e.getMessage());
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -73,10 +73,7 @@ public class ProfileController {
 		response.put("path", String.format("GET %s", Utils.getUrl(request)));
 		try {
 			DbQueryStatus dbQueryStatus = profileDriver.getAllSongFriendsLike(userName);
-            HashMap<String, List<String>> res = new HashMap<>();
             HashMap<String, List<String>> songs = (HashMap<String, List<String>>) dbQueryStatus.getData();
-            System.out.println(songs.keySet());
-            System.out.println(songs);
             for(String friendUserName : songs.keySet()){
                 int i = 0;
                 for(String songId: songs.get(friendUserName)){
@@ -91,11 +88,10 @@ public class ProfileController {
                     i += 1;
                 }
             }
-			response.put("message", res);
-            System.out.println("");
+			response.put("message", dbQueryStatus.getMessage());
 			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 		} catch (Exception e) {
-            System.out.println(e.getMessage());
+            response.put("message",e.getMessage());
 			return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
 		}
 	}
@@ -121,7 +117,6 @@ public class ProfileController {
         try {
             DbQueryStatus dbQueryStatus = profileDriver.blend(userName);
             List<String> songs = (List<String>) dbQueryStatus.getData();
-            System.out.println(songs);
             int i = 0;
             for(String songId: songs){
                 Request req = new Request.Builder()
@@ -147,28 +142,20 @@ public class ProfileController {
 		try {
 			response.put("path", String.format("PUT %s", Utils.getUrl(request)));
 			DbQueryStatus dbQueryStatus = playlistDriver.likeSong(params.get("userName"), params.get("songId"));
-            System.out.println(dbQueryStatus.getMessage());
             if("Relationship created".equals(dbQueryStatus.getMessage())){
                 String json = "{\"songId\": \"" + params.get("songId") + "\", \"shouldDecrement\": false}";
-
-                System.out.println("this worked "+json);
-
                 okhttp3.RequestBody body = okhttp3.RequestBody.create(MediaType.parse("application/json"), json );
                 Request req = new Request.Builder()
                         .url("http://localhost:3001/updateSongFavouritesCount/")
                         .put(body)
                         .build();
                 Call call = client.newCall(req);
-                String resp = call.execute().body().string();
-                // Parse the JSON response
-//                JSONObject jsonResponse = new JSONObject(resp);
-//                res.set(i, jsonResponse.getString("data"));
-                System.out.println(resp);
+                call.execute();
             }
 			response.put("message", dbQueryStatus.getMessage());
 			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 		} catch (Exception e) {
-			response.put("error", "An error occurred while processing the request.");
+			response.put("error", e.getMessage());
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
@@ -178,10 +165,11 @@ public class ProfileController {
         Map<String, Object> response = new HashMap<>();
         response.put("path", String.format("GET %s", Utils.getUrl(request)));
         try {
-            List<String> songs = (List<String>) profileDriver.getSongsInPlayList(userName).getData();
+            DbQueryStatus dbQueryStatus = profileDriver.getSongsInPlayList(userName);
+            List<String> songs = (List<String>) dbQueryStatus.getData();
+
             if(songs.isEmpty()){
                 response.put("message","No songs found for this user");
-                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
             }
             else {
                 JSONArray json = new JSONArray(songs);
@@ -194,9 +182,9 @@ public class ProfileController {
                 Call call = client.newCall(req);
                 String res = call.execute().body().string();
                 JSONObject jsonResponse = new JSONObject(res);
-                response.put("data", jsonResponse.get("data"));
-                return new ResponseEntity<>(response, HttpStatus.OK);
+                dbQueryStatus.setData(jsonResponse.get("data"));
             }
+            return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 
         } catch (Exception e) {
             response.put("error", e.getMessage());
@@ -212,25 +200,18 @@ public class ProfileController {
 			DbQueryStatus dbQueryStatus = playlistDriver.unlikeSong(params.get("userName"), params.get("songId"));
             if("Song unliked".equals(dbQueryStatus.getMessage())){
                 String json = "{\"songId\": \"" + params.get("songId") + "\", \"shouldDecrement\": true}";
-
-                System.out.println("this worked "+json);
-
                 okhttp3.RequestBody body = okhttp3.RequestBody.create(MediaType.parse("application/json"), json );
                 Request req = new Request.Builder()
                         .url("http://localhost:3001/updateSongFavouritesCount/")
                         .put(body)
                         .build();
                 Call call = client.newCall(req);
-                String resp = call.execute().body().string();
-                // Parse the JSON response
-//                JSONObject jsonResponse = new JSONObject(resp);
-//                res.set(i, jsonResponse.getString("data"));
-                System.out.println(resp);
+                call.execute();
             }
 			response.put("message", dbQueryStatus.getMessage());
 			return Utils.setResponseStatus(response, dbQueryStatus.getdbQueryExecResult(), dbQueryStatus.getData());
 		} catch (Exception e) {
-			response.put("error", "An error occurred while processing the request.");
+			response.put("error", e.getMessage());
 			return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}

@@ -26,17 +26,21 @@ public class SongDalImpl implements SongDal {
 
 	@Override
 	public DbQueryStatus addSong(Song songToAdd) {
-        Song song;
+        Song song = null;
         DbQueryStatus queryStatus;
         try{
-            if(db.exists(new Query(Criteria.where("songName").is(songToAdd.getSongName())), Song.class)){
-                queryStatus = new DbQueryStatus("Song already exists", DbQueryExecResult.QUERY_ERROR_GENERIC);
+            song = db.findOne(new Query(
+                                    Criteria.where("songName").is(songToAdd.getSongName())
+                                    .and("songArtistFullName").is(songToAdd.getSongArtistFullName())
+                                    .and("songAlbum").is(songToAdd.getSongAlbum())), Song.class);
+            if(song != null){
+                queryStatus = new DbQueryStatus("Song already exists", DbQueryExecResult.QUERY_OK);
             }
             else {
                 song = db.insert(songToAdd);
-                queryStatus = new DbQueryStatus("Song inserted", DbQueryExecResult.QUERY_OK);
-                queryStatus.setData(song);
+                queryStatus = new DbQueryStatus("Song successfully added", DbQueryExecResult.QUERY_OK);
             }
+            queryStatus.setData(song);
         }
         catch(Exception e){
             queryStatus = new DbQueryStatus(e.getMessage(), DbQueryExecResult.QUERY_ERROR_GENERIC);
@@ -137,16 +141,18 @@ public class SongDalImpl implements SongDal {
     @Override
     public DbQueryStatus getMostFavoriteSong(List<String> songIds) {
         DbQueryStatus queryStatus;
-        MatchOperation matchOperation = Aggregation.match(Criteria.where("_id").in(songIds));
-        // Sort by songAmountFavourites in descending order
-        SortOperation sortByFavouritesDesc = Aggregation.sort(Sort.Direction.DESC,"songAmountFavourites");
-        // Limit to 1 result (the one with the maximum songAmountFavourites)
-        Aggregation aggregation = Aggregation.newAggregation(matchOperation,sortByFavouritesDesc, Aggregation.limit(1));
-        AggregationResults<Song> result = db.aggregate(aggregation, "songs", Song.class);
-        List<Song> songs = result.getMappedResults();
-        System.out.println(songs);
-        queryStatus = new DbQueryStatus("", DbQueryExecResult.QUERY_OK);
-        queryStatus.setData(songs.get(0).getSongName());
+        try {
+            MatchOperation matchOperation = Aggregation.match(Criteria.where("_id").in(songIds));
+            SortOperation sortByFavouritesDesc = Aggregation.sort(Sort.Direction.DESC, "songAmountFavourites");
+            Aggregation aggregation = Aggregation.newAggregation(matchOperation, sortByFavouritesDesc, Aggregation.limit(1));
+            AggregationResults<Song> result = db.aggregate(aggregation, "songs", Song.class);
+            queryStatus = new DbQueryStatus("User Favorite Song", DbQueryExecResult.QUERY_OK);
+            List<Song> songs = result.getMappedResults();
+            queryStatus.setData(songs.get(0).getSongName());
+        }
+        catch (Exception e){
+            queryStatus = new DbQueryStatus(e.getMessage(), DbQueryExecResult.QUERY_ERROR_GENERIC);
+        }
 
         return queryStatus;
     }

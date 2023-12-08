@@ -49,12 +49,11 @@ public class ProfileDriverImpl implements ProfileDriver {
 	public DbQueryStatus createUserProfile(String userName, String fullName, String password) {
         DbQueryStatus status = new DbQueryStatus("Error creating Profile",DbQueryExecResult.QUERY_ERROR_GENERIC);
         try (Session session = driver.session()) {
-            String query = "create (p:profile{userName:$userName,fullName:$fullName, password:$password})-[r:created]->(pl:playlist{plName:$playName})";
+            String query = "merge (p:profile{userName:$userName,fullName:$fullName, password:$password})-[r:created]->(pl:playlist{plName:$playName})";
             StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("userName", userName,"fullName",fullName, "password", password, "playName", userName+"-favorites")));
             status.setMessage(userName + " Profile and playlist created");
             status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
             status.setData(result);
-            session.close();
         }
         catch(ClientException e){ // user already exist
             status.setMessage(e.getMessage());
@@ -73,11 +72,9 @@ public class ProfileDriverImpl implements ProfileDriver {
                 status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
             }
             else{
-                status.setMessage(userName + " Cant Follow " + frndUserName+" or one of the users don't exists");
+                status.setMessage(userName + " Cant Follow " + frndUserName+" one of the users don't exists");
                 status.setdbQueryExecResult(DbQueryExecResult.QUERY_ERROR_NOT_FOUND);
             }
-            status.setData(result);
-            session.close();
         }
         catch(Exception e){
             status.setMessage(e.getMessage());
@@ -90,10 +87,9 @@ public class ProfileDriverImpl implements ProfileDriver {
         DbQueryStatus status = new DbQueryStatus("Error unfollowing profile",DbQueryExecResult.QUERY_ERROR_GENERIC);
         try (Session session = driver.session()) {
             String query = "MATCH (a {userName: $userName})-[r:follows]->(b {userName: $frndUserName}) DELETE r;";
-            StatementResult result = session.writeTransaction(tx -> tx.run(query, parameters("userName", userName,"frndUserName", frndUserName)));
+            session.writeTransaction(tx -> tx.run(query, parameters("userName", userName,"frndUserName", frndUserName)));
             status.setMessage(userName + " unfollowed " + frndUserName);
             status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
-            session.close();
         }
         catch(Exception e){
             status.setMessage(e.getMessage());
@@ -120,9 +116,7 @@ public class ProfileDriverImpl implements ProfileDriver {
                 friendsSong.putIfAbsent(friendName, new ArrayList<>());
                 //NSF no song found
                 if(!songId.equals("NSF"))friendsSong.get(friendName).add(songId);
-//                System.out.println(friendName +" "+ songId);
             }
-//            System.out.println(friendsSong);
             status.setData(friendsSong);
             status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
             if (!friendsSong.isEmpty()) {
@@ -152,14 +146,13 @@ public class ProfileDriverImpl implements ProfileDriver {
                 songs.add(songId);
             }
             status.setData(songs);
+            status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
             if (!songs.isEmpty()) {
                 status.setMessage("Songs liked by " + userName + " retrieved successfully");
-                status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
             } else {
                 status.setMessage("No songs liked by " + userName + " found");
             }
-        } catch (ClientException e) {
-            System.out.println("error "+e.getMessage());
+        } catch (Exception e) {
             status.setMessage(e.getMessage());
         }
         return status;
@@ -171,11 +164,12 @@ public class ProfileDriverImpl implements ProfileDriver {
         try (Session session = driver.session()){
             String query = "MATCH (a:playlist {plName: $plName})-[:includes]->(song:song) RETURN song.songId AS result" +
                     " UNION " +
-                    "MATCH (user:profile {userName: $userName})-[:follows]->(friend)-[:created]->(playlist)-[:includes]->(songs:song) RETURN songs.songId AS result";
+                    "MATCH (followers:profile)-[:follows]->(user:profile {userName: $userName})" +
+                    "MATCH (followers)-[:created]->(playlist)-[:includes]->(songs:song) RETURN songs.songId AS result";
+
             StatementResult result = session.writeTransaction(tx -> tx.run(query,parameters("plName", userName+"-favorites","userName", userName)));
             status.setMessage(userName+ " and blend playlist created");
             status.setdbQueryExecResult(DbQueryExecResult.QUERY_OK);
-            session.close();
             List<String> songIds = new ArrayList<>();
 
             while (result.hasNext()) {
